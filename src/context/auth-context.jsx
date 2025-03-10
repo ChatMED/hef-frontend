@@ -1,42 +1,42 @@
 import {createContext, useContext, useEffect, useState} from "react";
-import {CircularProgress} from "@mui/material";
 import {LoadingScreen} from "@/components/loading-screen/LoadingScreen.jsx";
+import {login} from "@/services/login.js";
 
 const AuthContext = createContext({
-  user: null,
+    user: null,
 })
 
 export const AuthContextProvider = ({children}) => {
-  const [isAuth, setIsAuth] = useState(null);
-  const [user, setUser] = useState(null);
+    const [isAuth, setIsAuth] = useState(null);
+    const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      setUser(user);
-      setIsAuth(true);
-    } else {
-      setIsAuth(false);
+    useEffect(() => {
+        const user = localStorage.getItem("user");
+        if (user) {
+            setUser(user);
+            setIsAuth(true);
+        } else {
+            setIsAuth(false);
+        }
+    }, [])
+
+    const onLogin = (username) => {
+        login(username).then(response => {
+            localStorage.setItem("user", response.username);
+            setUser(response.username);
+            setIsAuth(true);
+        }).catch(error => {
+            setIsAuth(false);
+        });
     }
-  }, [])
 
-  const onLogin = (username) => {
-    setUser(username);
-    setIsAuth(true);
-    localStorage.setItem("user", username)
-  }
-
-  return (
-    <AuthContext.Provider
-      value={{
-        isAuth,
-        user,
-        onLogin
-      }}
-    >
-      {isAuth === null ? <LoadingScreen/> : children}
-    </AuthContext.Provider>
-  )
+    return (<AuthContext.Provider
+            value={{
+                isAuth, user, onLogin
+            }}
+        >
+            {isAuth === null ? <LoadingScreen/> : children}
+        </AuthContext.Provider>)
 }
 
 export const useAuthContext = () => useContext(AuthContext);
