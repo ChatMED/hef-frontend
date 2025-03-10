@@ -9,26 +9,20 @@ import {useEffect} from "react";
 import {useAuthContext} from "@/context/auth-context.jsx";
 
 export const RootLayout = () => {
-  const {isAuth} = useAuthContext();
-  const navigate = useNavigate();
+    const {isAuth} = useAuthContext();
+    const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isAuth !== null) {
-      if (isAuth) {
-        if (localStorage.getItem("attempt") && localStorage.getItem("question")) {
-          navigate(`/question/${localStorage.getItem("question")}`);
+    useEffect(() => {
+        if (isAuth && localStorage.getItem("user")) {
+            navigate("/question/");
         } else {
-          navigate("/question")
+            navigate("/login")
         }
-      } else {
-        navigate("/login")
-      }
-    }
-  }, [isAuth])
+    }, [isAuth])
 
-  return (
-    <>
-      <Outlet />
-    </>
-  )
+    return (
+        <>
+            <Outlet/>
+        </>
+    )
 }

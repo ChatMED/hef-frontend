@@ -1,210 +1,156 @@
 import {ModelEvaluation} from "../../features/model-evaluation/model-evaluation.jsx";
-import {Box, Button, CircularProgress, Divider, LinearProgress, Stack, Typography} from "@mui/material";
-import {useEffect, useState} from "react";
-import {IconChevronLeft, IconChevronRight, IconDeviceFloppy} from "@tabler/icons-react";
-import {useNavigate, useParams} from "react-router-dom";
+import {Box, Button, CircularProgress, LinearProgress, Stack, Typography} from "@mui/material";
+import {useEffect, useRef, useState} from "react";
+import {IconChevronRight} from "@tabler/icons-react";
 import axios from "@/axios/axios.js";
-import {toast} from "react-toastify";
 import {useAppContext} from "@/context/app-context.jsx";
 import {useAuthContext} from "@/context/auth-context.jsx";
-import {v4 as uuid} from "uuid";
 import {LoadingScreen} from "@/components/loading-screen/LoadingScreen.jsx";
 
 export const ModelEvaluationPage = () => {
-  const {user} = useAuthContext();
-  const {state: {responses}, dispatch} = useAppContext();
-  const [question, setQuestion] = useState({});
-  const [prev, setPrev] = useState(null);
-  const [next, setNext] = useState(null);
-  const {id} = useParams();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const navigate = useNavigate();
+    const {user} = useAuthContext();
+    const {state, dispatch} = useAppContext();
+    const {currentQuestionForEvaluation, models} = state || {};
+    const [question, setQuestion] = useState({});
+    const [evaluation, setEvaluation] = useState({});
+    const [prev] = useState(null);
+    const [currentIndex] = useState(0);
+    const metricsRef = useRef(null);
 
-  useEffect(() => {
-    const attempt = localStorage.getItem("attempt");
-    if (!attempt) {
-      localStorage.setItem("attempt", uuid())
-    }
-  }, [])
+    useEffect(() => {
+        setQuestion(currentQuestionForEvaluation);
+    }, [currentQuestionForEvaluation?.question?.id]);
 
-  useEffect(() => {
-    if (responses?.length > 0) {
-      if (+id) {
-        const index = responses?.findIndex(i => +i?.id === +id || +i?.q_id === +id);
-        if (index >= 0) {
-          const response = responses[index] || null;
-          const next = responses[index + 1] || null;
-          const prev = responses[index - 1] || null;
-          // console.log(response, next, prev)
-          setCurrentIndex(index);
-          setPrev(JSON.parse(JSON.stringify(prev)));
-          setNext(JSON.parse(JSON.stringify(next)));
-          setQuestion(JSON.parse(JSON.stringify(response)));
+    const onSaveAndPersist = async () => {
+        setEvaluation({...evaluation})
 
-          localStorage.setItem("question", response?.q_id || response?.id);
-          console.log("Set question", response)
-        } else {
-          setCurrentIndex(0);
-          setPrev(null);
-          setNext(null);
-          setQuestion(null);
+        if (evaluation?.isValid) {
+            evaluation["answer"] = currentQuestionForEvaluation?.answer?.id;
+            evaluation["username"] = user
+
+            await axios.post("/api/evaluations", evaluation)
+                .then(() => axios.get(`/api/questions/${user}`)
+                    .then(response => {
+                        dispatch({responses: response.data || [], currentQuestionForEvaluation: response.data || {}});
+                        setEvaluation({})
+                    })
+                    .catch(error => console.log(error)));
         }
-
-      } else {
-        const response = responses[0];
-        if (localStorage.getItem("attempt") && localStorage.getItem("question")) {
-          console.log(localStorage.getItem("question"));
-          navigate(`/question/${localStorage.getItem("question")}`);
-        } else {
-          navigate(`/question/${response?.q_id || response?.id}`);
-        }
-      }
     }
-  }, [id, responses]);
 
-  // Calculate percentage of responses left
-  const totalResponses = responses.length || 1;
-  const remainingResponses = totalResponses - currentIndex;
-  const percentageLeft = Math.round((remainingResponses / totalResponses) * 100);
+    const smoothScrollToTop = (duration = 500) => {
+        const start = window.scrollY || document.documentElement.scrollTop;
+        const startTime = performance.now();
 
+        function scrollStep(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeOut = progress * (2 - progress); // Ease-out effect
 
-  const onSave = async (question) => {
-    setQuestion({...question})
-    const oldQuestion = responses?.find(i => (i?.id || i?.q_id) === (question?.id || question?.q_id));
-    if (oldQuestion) {
-      const oldAnswers = oldQuestion.answers || [];
-      const answers = question.answers || [];
-      console.log(oldAnswers, answers)
-      const saveAnswers = [];
-      console.log("WHAT THE FUCK")
-      for (const oldAnswer of oldAnswers) {
-        const newAnswer = answers?.find(i => i?.id === oldAnswer?.id);
-        if (newAnswer) {
-          if (
-            oldAnswer.accuracy !== newAnswer.accuracy ||
-            oldAnswer.bias !== newAnswer.bias ||
-            oldAnswer.completeness !== newAnswer.completeness ||
-            oldAnswer.relevance !== newAnswer.relevance ||
-            oldAnswer.safety !== newAnswer.safety ||
-            oldAnswer.comment !== newAnswer.comment
-          ) {
-            let attempt = localStorage.getItem("attempt");
-            if (!attempt) {
-              attempt = uuid();
-              localStorage.setItem("attempt", attempt);
+            window.scrollTo(0, start * (1 - easeOut));
+            if (progress < 1) {
+                requestAnimationFrame(scrollStep);
             }
-            saveAnswers.push({...newAnswer, user: `${user || "anonymous"}-${attempt}`})
-          }
         }
-      }
-      if (saveAnswers.length) {
-        const toastId = toast.loading("Saving your answers...");
-        for (const saveAnswer of saveAnswers) {
-          try {
-            await axios.post("/api/score/evaluate", {...saveAnswer});
-
-          } catch (error) {
-            toast.update(toastId, {
-              render: `Failed to saved`,
-              autoClose: 3000,
-              type: "error",
-              isLoading: false
-            });
-          }
-          toast.update(toastId, {
-            render: `Answer saved`,
-            autoClose: 3000,
-            type: "success",
-            isLoading: false
-          });
-        }
-        dispatch({responses: responses?.map(i => i?.id === question?.id ? ({...question}) : {...i})})
-      }
+        requestAnimationFrame(scrollStep);
     }
-  }
 
-  const onPrev = async () => {
-    await onSave({...question});
-    navigate(`/question/${prev?.id || prev?.q_id}`)
-  }
+    const onNext = async () => {
+        await onSaveAndPersist({...evaluation});
+        smoothScrollToTop();
 
-  const onNext = async () => {
-    await onSave({...question});
-    if (next?.id || next?.q_id) {
-      navigate(`/question/${next?.id || next?.q_id}`)
-    } else if (responses?.length > 0) {
-      localStorage.removeItem("attempt");
-      localStorage.removeItem("question");
-      navigate(`/thank-you`)
+        metricsRef.current.scrollTo({top: 0, behavior: "smooth"});
     }
-  }
 
-  return (
-      <>
-        <LinearProgress variant={"buffer"} value={(100 - percentageLeft) || 0} valueBuffer={((100 - percentageLeft) || 0) + 5}
-                        sx={{position: "fixed", top: 0, left: 0, right: 0}}/>
-        {
-          question?.id || question?.q_id ?
-            <ModelEvaluation question={question} setQuestion={setQuestion}/> :
-            <Box sx={{flex: 1}}>
-              <LoadingScreen/>
+    const evaluatedQuestions = currentQuestionForEvaluation?.evaluatedQuestions;
+    const remainingQuestions = currentQuestionForEvaluation?.remainingQuestions;
+    const totalQuestions = evaluatedQuestions + remainingQuestions;
+    const percentageLeft = Math.round((remainingQuestions / totalQuestions) * 100)
+    return (
+        <>
+            <LinearProgress variant={"buffer"} value={(100 - percentageLeft) || 0}
+                            valueBuffer={((100 - percentageLeft) || 0) + 5}
+                            sx={{position: "fixed", top: 0, left: 0, right: 0}}/>
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    width: "100%",
+                    py: 3,
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "2px solid #d1d1d1",
+                        backgroundColor: "#f8f9fa",
+                        padding: "6px 14px",
+                        borderRadius: "8px",
+                        minWidth: "250px",
+                    }}
+                >
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: "#252525",
+                            fontWeight: "500",
+                            fontSize: "14px",
+                            textAlign: "center",
+                        }}
+                    >
+                        You have evaluated {evaluatedQuestions} / {totalQuestions} questions.
+                    </Typography>
+                </Box>
             </Box>
-        }
-        <Stack direction={"column"} gap={2}
-               sx={{position: "fixed", bottom: 0, px: 1, left: 0, right: 0, bgcolor: "background.main",}}>
-          <Stack maxWidth={"lg"} direction={"row"} gap={2}
-                 useFlexGap flexWrap={"wrap"}
-                 sx={{
-                   bgcolor: "background.main",
-                   borderTop: 1,
-                   borderColor: "divider",
-                   py: 2,
-                   width: "100%",
-                   mx: "auto"
-                 }}>
-
-            <Button
-              disabled={!prev?.id && !prev?.q_id}
-              sx={{
-                flex: 2,
-                borderRadius: 2,
-                bgcolor: "#f1efef",
-                color: !!prev?.id || !!prev?.q_id ? "#252525 !important" : "default",
-                "&:hover": {bgcolor: "#e1dfdf !important"},
-              }}
-              startIcon={<IconChevronLeft size={18}/>}
-              onClick={onPrev}
-            >
-              Back
-            </Button>
-            <Button
-              variant={"text"}
-              sx={{
-                flex: 2,
-                borderRadius: 2,
-                bgcolor: "#f1efef",
-                color: !!prev?.id || !!prev?.q_id ? "#252525 !important" : "default",
-                "&:hover": {bgcolor: "#e1dfdf !important"},
-              }}
-              startIcon={<IconDeviceFloppy size={18}/>}
-              onClick={() => onSave({...question})}
-            >
-              Save
-            </Button>
-            <Button
-              variant={"contained"}
-              sx={{
-                flex: 5, boxShadow: 0,
-                borderRadius: 2, minWidth: "200px",
-                color: "#fefefe !important"
-              }}
-              endIcon={<IconChevronRight size={18}/>}
-              onClick={onNext}
-            >
-              Save & Continue
-            </Button>
-          </Stack>
-        </Stack>
-      </>
-  );
+            {
+                currentQuestionForEvaluation?.question?.id ?
+                    <ModelEvaluation question={currentQuestionForEvaluation?.question}
+                                     answer={currentQuestionForEvaluation?.answer}
+                                     evaluatedModels={currentQuestionForEvaluation?.evaluatedModels}
+                                     allModels={models}
+                                     evaluation={evaluation}
+                                     setEvaluation={setEvaluation}
+                                     metricsRef={metricsRef}/> :
+                    <Box sx={{flex: 1}}>
+                        <LoadingScreen/>
+                    </Box>
+            }
+            <Stack direction={"column"} gap={2}
+                   sx={{position: "fixed", bottom: 0, px: 1, left: 0, right: 0, bgcolor: "background.main",}}>
+                <Stack maxWidth={"lg"} direction={"row"} gap={2}
+                       useFlexGap flexWrap={"wrap"}
+                       sx={{
+                           bgcolor: "background.main",
+                           borderTop: 1,
+                           borderColor: "divider",
+                           py: 2,
+                           width: "100%",
+                           mx: "auto"
+                       }}>
+                    <Button
+                        variant={"contained"}
+                        sx={{
+                            flex: 5,
+                            boxShadow: 0,
+                            borderRadius: 2,
+                            minWidth: "200px",
+                            color: "#fefefe !important",
+                            bgcolor: evaluation?.isValid ? "primary.main" : "grey.400",
+                            "&:hover": {
+                                bgcolor: evaluation?.isValid ? "primary.dark" : "grey.500"
+                            }
+                        }}
+                        endIcon={<IconChevronRight size={18}/>}
+                        onClick={onNext}
+                        disabled={!evaluation?.isValid}
+                    >
+                        Save & Continue to next question
+                    </Button>
+                </Stack>
+            </Stack>
+        </>
+    );
 };
