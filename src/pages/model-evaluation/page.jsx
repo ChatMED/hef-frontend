@@ -52,6 +52,7 @@ export const ModelEvaluationPage = () => {
                 requestAnimationFrame(scrollStep);
             }
         }
+
         requestAnimationFrame(scrollStep);
     }
 
@@ -66,18 +67,17 @@ export const ModelEvaluationPage = () => {
     const remainingQuestions = currentQuestionForEvaluation?.remainingQuestions;
     const totalQuestions = evaluatedQuestions + remainingQuestions;
     const percentageLeft = Math.round((remainingQuestions / totalQuestions) * 100)
-    return (
-        <>
-            <LinearProgress variant={"buffer"} value={(100 - percentageLeft) || 0}
-                            valueBuffer={((100 - percentageLeft) || 0) + 5}
-                            sx={{position: "fixed", top: 0, left: 0, right: 0}}/>
+    return (<>
+        {currentQuestionForEvaluation?.question?.id && (<>
+            <LinearProgress
+                variant={"buffer"}
+                value={(100 - percentageLeft) || 0}
+                valueBuffer={((100 - percentageLeft) || 0) + 5}
+                sx={{position: "fixed", top: 0, left: 0, right: 0}}
+            />
             <Box
                 sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    width: "100%",
-                    py: 3,
+                    display: "flex", justifyContent: "center", alignItems: "center", width: "100%", py: 3,
                 }}
             >
                 <Box
@@ -95,62 +95,66 @@ export const ModelEvaluationPage = () => {
                     <Typography
                         variant="body2"
                         sx={{
-                            color: "#252525",
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            textAlign: "center",
+                            color: "#252525", fontWeight: "500", fontSize: "14px", textAlign: "center",
                         }}
                     >
                         You have evaluated {evaluatedQuestions} / {totalQuestions} questions.
                     </Typography>
                 </Box>
             </Box>
-            {
-                currentQuestionForEvaluation?.question?.id ?
-                    <ModelEvaluation question={currentQuestionForEvaluation?.question}
-                                     answer={currentQuestionForEvaluation?.answer}
-                                     evaluatedModels={currentQuestionForEvaluation?.evaluatedModels}
-                                     allModels={models}
-                                     evaluation={evaluation}
-                                     setEvaluation={setEvaluation}
-                                     metricsRef={metricsRef}/> :
-                    <Box sx={{flex: 1}}>
-                        <LoadingScreen/>
-                    </Box>
-            }
-            <Stack direction={"column"} gap={2}
-                   sx={{position: "fixed", bottom: 0, px: 1, left: 0, right: 0, bgcolor: "background.main",}}>
-                <Stack maxWidth={"lg"} direction={"row"} gap={2}
-                       useFlexGap flexWrap={"wrap"}
-                       sx={{
-                           bgcolor: "background.main",
-                           borderTop: 1,
-                           borderColor: "divider",
-                           py: 2,
-                           width: "100%",
-                           mx: "auto"
-                       }}>
-                    <Button
-                        variant={"contained"}
-                        sx={{
-                            flex: 5,
-                            boxShadow: 0,
-                            borderRadius: 2,
-                            minWidth: "200px",
-                            color: "#fefefe !important",
-                            bgcolor: evaluation?.isValid ? "primary.main" : "grey.400",
-                            "&:hover": {
-                                bgcolor: evaluation?.isValid ? "primary.dark" : "grey.500"
-                            }
-                        }}
-                        endIcon={<IconChevronRight size={18}/>}
-                        onClick={onNext}
-                        disabled={!evaluation?.isValid}
-                    >
-                        Save & Continue to next question
-                    </Button>
-                </Stack>
+        </>)}
+
+        {currentQuestionForEvaluation?.question?.id ?
+            <ModelEvaluation question={currentQuestionForEvaluation?.question}
+                             answer={currentQuestionForEvaluation?.answer}
+                             evaluatedModels={currentQuestionForEvaluation?.evaluatedModels}
+                             allModels={models}
+                             evaluation={evaluation}
+                             setEvaluation={setEvaluation}
+                             metricsRef={metricsRef}/> : <Box sx={{flex: 1}}>
+                <LoadingScreen/>
+            </Box>}
+        {currentQuestionForEvaluation?.question?.id && (<Stack
+            direction={"column"}
+            gap={2}
+            sx={{position: "fixed", bottom: 0, px: 1, left: 0, right: 0, bgcolor: "background.main"}}
+        >
+            <Stack
+                maxWidth={"lg"}
+                direction={"row"}
+                gap={2}
+                useFlexGap
+                flexWrap={"wrap"}
+                sx={{
+                    bgcolor: "background.main",
+                    borderTop: 1,
+                    borderColor: "divider",
+                    py: 2,
+                    width: "100%",
+                    mx: "auto",
+                }}
+            >
+                <Button
+                    variant={"contained"}
+                    sx={{
+                        flex: 5,
+                        boxShadow: 0,
+                        borderRadius: 2,
+                        minWidth: "200px",
+                        color: "#fefefe !important",
+                        bgcolor: evaluation?.isValid ? "primary.main" : "grey.400",
+                        "&:hover": {
+                            bgcolor: evaluation?.isValid ? "primary.dark" : "grey.500",
+                        },
+                    }}
+                    endIcon={<IconChevronRight size={18}/>}
+                    onClick={onNext}
+                    disabled={!evaluation?.isValid}
+                >
+                    Save & Continue to next question
+                </Button>
             </Stack>
-        </>
-    );
+        </Stack>)}
+
+    </>);
 };

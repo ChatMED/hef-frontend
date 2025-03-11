@@ -24,7 +24,7 @@ export const AppContextProvider = ({children}) => {
             })
             .catch(error => {
                 console.log(error)
-                dispatch({ currentQuestionForEvaluation: {} })
+                dispatch({currentQuestionForEvaluation: {}})
             })
             .finally(() => setLoading(false))
 
