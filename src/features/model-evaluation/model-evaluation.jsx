@@ -1,30 +1,56 @@
 import {Box, Button, Stack, Typography} from "@mui/material";
 import {ModelResponse} from "@/features/model-evaluation/model-response.jsx";
 
-export const ModelEvaluation = ({question, answer, allModels, evaluatedModels, evaluation, setEvaluation, metricsRef}) => {
+export const ModelEvaluation = ({
+                                    question,
+                                    answer,
+                                    allModels,
+                                    currentModel,
+                                    evaluatedModels,
+                                    evaluation,
+                                    setEvaluation,
+                                    setCurrentModel,
+                                    metricsRef,
+                                    answerRef
+                                }) => {
     const validateEvaluation = (evaluationData) => {
         if (!evaluationData || Object.keys(evaluationData).length === 0) return false;
 
-        const requiredFields = [
-            "accuracy", "comprehensiveness", "clarity", "empathy",
-            "bias", "harm", "trust", "relevance", "currency",
-            "securityAndPrivacy", "perceivedUsefulness"
-        ];
-        const missingFields = requiredFields.filter(field =>
-            evaluationData[field] === undefined || evaluationData[field] === null || evaluationData[field] === ""
-        );
+        const requiredFields = ["accuracy", "comprehensiveness", "clarity", "empathy", "bias", "harm", "trust", "relevance", "currency", "securityAndPrivacy", "perceivedUsefulness"];
+        const missingFields = requiredFields.filter(field => evaluationData[field] === undefined || evaluationData[field] === null || evaluationData[field] === "");
         return missingFields.length === 0;
+    };
+
+    const handleModelClick = (model) => {
+        setCurrentModel(model);
     };
 
     return (<Stack maxWidth={"lg"} direction={"column"} fullWidth gap={2} sx={{flex: 1, pb: 20}}>
         <Box sx={{py: 0, px: 1}}>
-            <Typography align={"left"} fontWeight={600}>Question:</Typography>
+            <Typography align={"left"} fontWeight={600}>Question {question?.id}:</Typography>
             <Typography align={"left"}>{question?.text}</Typography>
         </Box>
-        <Stack direction={"row"} useFlexGap flexWrap={"wrap"} gap={1} sx={{px: 1}}>
-            {allModels?.map(model => {
-                return (<Button key={model}
-                                variant={evaluatedModels?.some(e => e.name === model.name) ? "contained" : "outlined"}>{model?.name}</Button>)
+        <Stack direction="row" useFlexGap flexWrap="wrap" gap={1} sx={{px: 1}}>
+            {allModels.map((model) => {
+                const isEvaluated = evaluatedModels.some((e) => e?.name === model?.name);
+                const isCurrent = currentModel?.name === model?.name;
+
+                return (<Button
+                    key={model?.name}
+                    variant={isCurrent ? "contained" : isEvaluated ? "contained" : "outlined"}
+                    color={isCurrent ? "warning" : isEvaluated ? "primary" : "secondary"}
+                    sx={{
+                        backgroundColor: isCurrent ? "#E24D28" : undefined,
+                        color: isCurrent ? "#FFFFFF" : undefined,
+                        "&:hover": {
+                            backgroundColor: isCurrent ? "#D44120" : undefined,
+                        },
+                    }}
+                    onClick={isEvaluated || isCurrent ? () => handleModelClick(model) : undefined}
+                    disabled={!isEvaluated && !isCurrent}
+                >
+                    {model?.name}
+                </Button>);
             })}
         </Stack>
 
@@ -39,6 +65,7 @@ export const ModelEvaluation = ({question, answer, allModels, evaluatedModels, e
                     return newEvaluation;
                 })}
                 metricsRef={metricsRef}
+                answerRef={answerRef}
             />
 
             <Typography fontSize={"small"} align={"center"} sx={{p: 1}}>

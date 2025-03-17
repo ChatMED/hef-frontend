@@ -11,15 +11,33 @@ export const ModelEvaluationPage = () => {
     const {user} = useAuthContext();
     const {state, dispatch} = useAppContext();
     const {currentQuestionForEvaluation, models} = state || {};
+    const [currentModel, setCurrentModel] = useState();
     const [question, setQuestion] = useState({});
     const [evaluation, setEvaluation] = useState({});
     const [prev] = useState(null);
     const [currentIndex] = useState(0);
     const metricsRef = useRef(null);
+    const answerRef = useRef(null);
 
     useEffect(() => {
         setQuestion(currentQuestionForEvaluation);
     }, [currentQuestionForEvaluation?.question?.id]);
+
+    useEffect(() => {
+        if (currentModel !== undefined && currentModel !== null) {
+            axios.get(`/api/questions/next/${user}?modelId=${currentModel?.id}`).then((response) => {
+                dispatch({currentQuestionForEvaluation: response.data || {}})
+                setQuestion(response?.data);
+
+                let oldEvaluation = response?.data?.evaluation;
+                if (oldEvaluation)
+                    oldEvaluation["isValid"] = true;
+                setEvaluation(oldEvaluation);
+            }).catch((error) => {
+                console.log(error)
+            });
+        }
+    }, [currentModel?.id])
 
     const onSaveAndPersist = async () => {
         setEvaluation({...evaluation})
@@ -29,10 +47,11 @@ export const ModelEvaluationPage = () => {
             evaluation["username"] = user
 
             await axios.post("/api/evaluations", evaluation)
-                .then(() => axios.get(`/api/questions/${user}`)
+                .then(() => axios.get(`/api/questions/next/${user}`)
                     .then(response => {
                         dispatch({responses: response.data || [], currentQuestionForEvaluation: response.data || {}});
                         setEvaluation({})
+                        setCurrentModel(response?.data?.answer?.model);
                     })
                     .catch(error => console.log(error)));
         }
@@ -45,7 +64,7 @@ export const ModelEvaluationPage = () => {
         function scrollStep(currentTime) {
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            const easeOut = progress * (2 - progress); // Ease-out effect
+            const easeOut = progress * (2 - progress);
 
             window.scrollTo(0, start * (1 - easeOut));
             if (progress < 1) {
@@ -60,7 +79,14 @@ export const ModelEvaluationPage = () => {
         await onSaveAndPersist({...evaluation});
         smoothScrollToTop();
 
-        metricsRef.current.scrollTo({top: 0, behavior: "smooth"});
+        setTimeout(() => {
+            if (answerRef.current) {
+                answerRef.current.scrollTop = 0;
+            }
+            if (metricsRef.current) {
+                metricsRef.current.scrollTop = 0;
+            }
+        }, 100);
     }
 
     const evaluatedQuestions = currentQuestionForEvaluation?.evaluatedQuestions;
@@ -77,7 +103,7 @@ export const ModelEvaluationPage = () => {
             />
             <Box
                 sx={{
-                    display: "flex", justifyContent: "center", alignItems: "center", width: "100%", py: 3,
+                    display: "flex", justifyContent: "center", alignItems: "center", width: "100%", pt: 1
                 }}
             >
                 <Box
@@ -87,7 +113,7 @@ export const ModelEvaluationPage = () => {
                         justifyContent: "center",
                         border: "2px solid #d1d1d1",
                         backgroundColor: "#f8f9fa",
-                        padding: "6px 14px",
+                        padding: "4px 10px",
                         borderRadius: "8px",
                         minWidth: "250px",
                     }}
@@ -95,7 +121,7 @@ export const ModelEvaluationPage = () => {
                     <Typography
                         variant="body2"
                         sx={{
-                            color: "#252525", fontWeight: "500", fontSize: "14px", textAlign: "center",
+                            color: "#252525", fontWeight: "500", fontSize: "11px", textAlign: "center",
                         }}
                     >
                         You have evaluated {evaluatedQuestions} / {totalQuestions} questions.
@@ -104,16 +130,18 @@ export const ModelEvaluationPage = () => {
             </Box>
         </>)}
 
-        {currentQuestionForEvaluation?.question?.id ?
-            <ModelEvaluation question={currentQuestionForEvaluation?.question}
-                             answer={currentQuestionForEvaluation?.answer}
-                             evaluatedModels={currentQuestionForEvaluation?.evaluatedModels}
-                             allModels={models}
-                             evaluation={evaluation}
-                             setEvaluation={setEvaluation}
-                             metricsRef={metricsRef}/> : <Box sx={{flex: 1}}>
-                <LoadingScreen/>
-            </Box>}
+        {currentQuestionForEvaluation?.question?.id ? <ModelEvaluation question={currentQuestionForEvaluation?.question}
+                                                                       answer={currentQuestionForEvaluation?.answer}
+                                                                       currentModel={currentQuestionForEvaluation?.answer?.model}
+                                                                       evaluatedModels={currentQuestionForEvaluation?.evaluatedModels}
+                                                                       allModels={models}
+                                                                       evaluation={evaluation}
+                                                                       setEvaluation={setEvaluation}
+                                                                       setCurrentModel={setCurrentModel}
+                                                                       metricsRef={metricsRef}
+                                                                       answerRef={answerRef}/> : <Box sx={{flex: 1}}>
+            <LoadingScreen/>
+        </Box>}
         {currentQuestionForEvaluation?.question?.id && (<Stack
             direction={"column"}
             gap={2}
@@ -126,12 +154,7 @@ export const ModelEvaluationPage = () => {
                 useFlexGap
                 flexWrap={"wrap"}
                 sx={{
-                    bgcolor: "background.main",
-                    borderTop: 1,
-                    borderColor: "divider",
-                    py: 2,
-                    width: "100%",
-                    mx: "auto",
+                    bgcolor: "background.main", borderTop: 1, borderColor: "divider", py: 2, width: "100%", mx: "auto",
                 }}
             >
                 <Button

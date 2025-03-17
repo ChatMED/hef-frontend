@@ -2,8 +2,15 @@ import {
     Box, Chip, Grid, Stack, TextField, Tooltip, Typography
 } from "@mui/material";
 import {MarkdownText} from "@/features/model-evaluation/MarkdownText.jsx";
+import {useEffect} from "react";
 
-export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef}) => {
+export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef, answerRef}) => {
+
+    useEffect(() => {
+        if (answerRef?.current) {
+            answerRef.current.scrollTop = 0;
+        }
+    }, [modelResponse?.text]);
 
     const responseRatings = [{
         key: "accuracy",
@@ -113,9 +120,10 @@ export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef})
     }];
 
     return (<Stack direction={"row"} gap={3} sx={{position: "relative", textAlign: "left", padding: 2}}>
-        <Box sx={{
-            flex: 3, px: 2, overflowY: "auto", maxHeight: "80vh", minWidth: "60%"
-        }}>
+        <Box ref={answerRef}
+             sx={{
+                 flex: 3, px: 2, overflowY: "auto", maxHeight: "80vh", minWidth: "60%"
+             }}>
             <Typography align={"left"} fontWeight={600}>Answer</Typography>
             <MarkdownText>
                 {modelResponse?.text}
@@ -149,17 +157,19 @@ export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef})
                         <Stack direction={"row"} gap={1} flexWrap={"wrap"}>
                             {Object.keys(ratings).map((value) => {
                                 let clicked = parseInt(value) === parseInt(evaluation?.[key]) ? "primary" : "default"
-                                return (<Chip
-                                    key={value}
-                                    color={clicked}
-                                    label={ratings[value]}
-                                    onClick={() => {
-                                        onUpdate(key, value);
-                                    }}
-                                    sx={{
-                                        maxWidth: "100%", fontSize: "12px", padding: "4px 8px",
-                                    }}
-                                />)
+                                return (<Tooltip key={value} title={ratings[value]} arrow>
+                                    <Chip
+                                        key={value}
+                                        color={clicked}
+                                        label={ratings[value]}
+                                        onClick={() => {
+                                            onUpdate(key, value);
+                                        }}
+                                        sx={{
+                                            maxWidth: "100%", fontSize: "12px", padding: "4px 8px",
+                                        }}
+                                    />
+                                </Tooltip>)
                             })}
                         </Stack>
                     </Grid>);

@@ -16,7 +16,7 @@ export const AppContextProvider = ({children}) => {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`/api/questions/${user}`)
+        axios.get(`/api/questions/next/${user}`)
             .then(questionResponse => {
                 dispatch({
                     currentQuestionForEvaluation: questionResponse.data || {}
