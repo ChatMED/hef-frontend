@@ -35,7 +35,6 @@ export const RootRouterProvider = () => {
                     }
                 />
                 <Route path="login" element={<LoginPage/>}/>
-                {/* Dynamic redirect based on isAuth */}
                 <Route path="*" element={<Navigate to={isAuth ? "/question" : "/login"} replace/>}/>
             </Route>
         )

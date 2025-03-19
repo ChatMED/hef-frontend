@@ -1,10 +1,23 @@
 import {
-    Box, Chip, Grid, Stack, TextField, Tooltip, Typography
+    Box,
+    Chip,
+    Grid,
+    Stack,
+    TextField,
+    Tooltip,
+    Typography,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions
 } from "@mui/material";
-import {MarkdownText} from "@/features/model-evaluation/markdown-text.jsx";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 
 export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef, answerRef}) => {
+
+    const [openHelp, setOpenHelp] = useState(false);
 
     useEffect(() => {
         if (answerRef?.current) {
@@ -119,74 +132,116 @@ export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef, 
         }
     }];
 
-    return (<Stack direction={"row"} gap={3} sx={{position: "relative", textAlign: "left", padding: 2}}>
-        <Box ref={answerRef}
-             sx={{
-                 flex: 3, px: 2, overflowY: "auto", maxHeight: "80vh", minWidth: "60%"
-             }}>
-            <Typography align={"left"} fontWeight={600}>Answer</Typography>
-            <MarkdownText>
-                {modelResponse?.text}
-            </MarkdownText>
-        </Box>
+    return (
+        <>
+            <Box
+                sx={{
+                    backgroundColor: "#f8f9fa",
+                    padding: 2,
+                    borderRadius: "8px",
+                    maxWidth: "1400px",
+                    mx: "auto",
+                    position: "relative"
+                }}
+            >
+                <Grid container spacing={2} alignItems="flex-start" sx={{width: "100%"}}>
+                    <Grid item xs={12} md={9}>
+                        <Grid container spacing={2}>
+                            {responseRatings.map(({key, label, tooltip, ratings}) => (
+                                <Grid item xs={6} sm={4} md={3} key={key}>
+                                    <Typography fontWeight={600} sx={{fontSize: "13px", mb: 0.5, textAlign: "left"}}>
+                                        {label}
+                                    </Typography>
+                                    <Stack direction="row" gap={0.7} flexWrap="wrap">
+                                        {Object.keys(ratings).map((value) => (
+                                            <Tooltip key={value} title={ratings[value]} arrow>
+                                                <Chip
+                                                    size="small"
+                                                    color={parseInt(value) === parseInt(evaluation?.[key]) ? "primary" : "default"}
+                                                    label={value}
+                                                    onClick={() => onUpdate(key, value)}
+                                                    sx={{
+                                                        fontSize: "11px",
+                                                        padding: "1px 5px",
+                                                        minWidth: "26px",
+                                                        height: "22px",
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        ))}
+                                    </Stack>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </Grid>
 
-        <Box sx={{
-            flex: 2,
-            pt: 2,
-            position: "sticky",
-            right: 0,
-            maxWidth: "40%",
-            backgroundColor: "#f8f9fa",
-            padding: 3,
-            borderRadius: "8px"
-        }}>
-            <Grid ref={metricsRef} container spacing={2} sx={{overflowY: "auto", maxHeight: "80vh"}}>
-                {responseRatings.map((responseRating) => {
-                    const {key, label, tooltip, ratings} = responseRating;
-                    return (<Grid item xs={6} key={key} sx={{display: "flex", flexDirection: "column"}}>
-                        <Tooltip title={tooltip}>
-                            <Typography
-                                fontWeight={600}
-                                sx={{
-                                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 1
-                                }}
-                            >
-                                {label}
+                    <Grid item xs={12} md={3}>
+                        <Box sx={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+                            <Typography fontWeight={600} sx={{fontSize: "13px", mb: 1, textAlign: "left"}}>
+                                Comment
                             </Typography>
-                        </Tooltip>
-                        <Stack direction={"row"} gap={1} flexWrap={"wrap"}>
-                            {Object.keys(ratings).map((value) => {
-                                let clicked = parseInt(value) === parseInt(evaluation?.[key]) ? "primary" : "default"
-                                return (<Tooltip key={value} title={ratings[value]} arrow>
-                                    <Chip
-                                        key={value}
-                                        color={clicked}
-                                        label={ratings[value]}
-                                        onClick={() => {
-                                            onUpdate(key, value);
-                                        }}
-                                        sx={{
-                                            maxWidth: "100%", fontSize: "12px", padding: "4px 8px",
-                                        }}
-                                    />
-                                </Tooltip>)
-                            })}
-                        </Stack>
-                    </Grid>);
-                })}
-            </Grid>
+                            <TextField
+                                value={evaluation?.comment || ""}
+                                onChange={e => onUpdate("comment", e.target.value)}
+                                placeholder="Please enter your comment here..."
+                                multiline
+                                rows={4}
+                                fullWidth
+                                size="small"
+                                sx={{
+                                    backgroundColor: "#fff",
+                                    fontSize: "13px",
+                                    "& .MuiInputBase-input::placeholder": {fontSize: "13px"},
+                                    "& .MuiInputBase-input": {padding: "8px"},
+                                    resize: "none"
+                                }}
+                            />
+                        </Box>
+                    </Grid>
+                </Grid>
 
-            <Box sx={{marginTop: 3}}>
-                <Typography fontWeight={600} gutterBottom>Comment</Typography>
-                <TextField
-                    value={evaluation?.comment || ""}
-                    fullWidth
-                    onChange={e => onUpdate("comment", e.target.value)}
-                    placeholder="Please enter comment here"
-                    multiline
-                    rows={3}
-                />
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setOpenHelp(true)}
+                    sx={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 8,
+                        minWidth: "20px",
+                        width: "20px",
+                        height: "20px",
+                        padding: 0,
+                        fontSize: '12px',
+                        lineHeight: 1,
+                        borderRadius: '50%',
+                    }}
+                >
+                    ?
+                </Button>
             </Box>
-        </Box>
-    </Stack>);
+
+            <Dialog open={openHelp} onClose={() => setOpenHelp(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{fontSize: "14px", fontWeight: "600", color: "#252525"}}>
+                    Metrics Descriptions
+                </DialogTitle>
+                <DialogContent dividers>
+                    <DialogContentText component="div">
+                        <Box component="ul" sx={{pl: 3}}>
+                            {responseRatings.map(({label, tooltip}) => (
+                                <li key={label}>
+                                    <Typography variant="body2" component="span" sx={{fontSize: "13px"}}>
+                                        <strong>{label}:</strong> {tooltip}
+                                    </Typography>
+                                </li>
+                            ))}
+                        </Box>
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenHelp(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
 };
