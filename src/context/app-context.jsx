@@ -16,10 +16,10 @@ export const AppContextProvider = ({children}) => {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`/api/questions/next/${user}`)
+        axios.get(`/api/questions/${user}`)
             .then(questionResponse => {
                 dispatch({
-                    currentQuestionForEvaluation: questionResponse.data || {}
+                    currentQuestionForEvaluation: questionResponse?.data || {}
                 });
             })
             .catch(error => {
@@ -30,7 +30,7 @@ export const AppContextProvider = ({children}) => {
 
         axios.get('api/models')
             .then(modelsResponse => {
-                dispatch({models: modelsResponse.data});
+                dispatch({models: modelsResponse?.data});
             }).catch(error => console.log(error))
 
     }, [user])
@@ -41,6 +41,7 @@ export const AppContextProvider = ({children}) => {
         >
             {loading ? <LoadingScreen/> : children}
         </AppContext.Provider>
+
     )
 }
 

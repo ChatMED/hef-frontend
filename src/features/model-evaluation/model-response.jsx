@@ -1,7 +1,7 @@
 import {
     Box, Chip, Grid, Stack, TextField, Tooltip, Typography
 } from "@mui/material";
-import {MarkdownText} from "@/features/model-evaluation/MarkdownText.jsx";
+import {MarkdownText} from "@/features/model-evaluation/markdown-text.jsx";
 import {useEffect} from "react";
 
 export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef, answerRef}) => {

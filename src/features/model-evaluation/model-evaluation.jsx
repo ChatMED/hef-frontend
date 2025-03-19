@@ -40,10 +40,10 @@ export const ModelEvaluation = ({
                     variant={isCurrent ? "contained" : isEvaluated ? "contained" : "outlined"}
                     color={isCurrent ? "warning" : isEvaluated ? "primary" : "secondary"}
                     sx={{
-                        backgroundColor: isCurrent ? "#E24D28" : undefined,
+                        backgroundColor: isCurrent ? "#B2527C" : undefined,
                         color: isCurrent ? "#FFFFFF" : undefined,
                         "&:hover": {
-                            backgroundColor: isCurrent ? "#D44120" : undefined,
+                            backgroundColor: isCurrent ? "#B2527C" : undefined,
                         },
                     }}
                     onClick={isEvaluated || isCurrent ? () => handleModelClick(model) : undefined}
@@ -69,7 +69,7 @@ export const ModelEvaluation = ({
             />
 
             <Typography fontSize={"small"} align={"center"} sx={{p: 1}}>
-                * When you fill-in all metrics the 'Save & Continue to next question' button will become available.
+                * When you fill-in all metrics the 'Save' and 'Save and Continue to next unevaluated question' buttons become available.
             </Typography>
         </Box>
     </Stack>)

@@ -3,7 +3,7 @@ import {ToastContainer} from "react-toastify";
 import {ThemeProvider} from "@mui/material";
 import {darkTheme, lightTheme} from "./theme.config.js";
 import {useAtom} from "jotai";
-import {RootRouterProvider} from "./pages/router.jsx";
+import {RootRouterProvider} from "./pages/routing/router.jsx";
 import {ThemeAtom} from "./atoms.js";
 import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
 import {AdapterMoment} from "@mui/x-date-pickers/AdapterMoment";

@@ -9,7 +9,7 @@ export const LoginForm = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (isAuth) {
+        if (localStorage.getItem("user")) {
             navigate("/question");
         }
     }, []);
