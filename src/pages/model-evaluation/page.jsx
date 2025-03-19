@@ -17,6 +17,7 @@ export const ModelEvaluationPage = () => {
     const [question, setQuestion] = useState({});
     const [currentModel, setCurrentModel] = useState();
     const [evaluation, setEvaluation] = useState({});
+    const [prefillTriggered, setPrefillTriggered] = useState(false);
     const metricsRef = useRef(null);
     const answerRef = useRef(null);
     const navigate = useNavigate();
@@ -27,6 +28,7 @@ export const ModelEvaluationPage = () => {
         let oldEvaluation = currentQuestionForEvaluation?.evaluation;
         if (oldEvaluation) oldEvaluation["isValid"] = true;
         setEvaluation(oldEvaluation);
+        setPrefillTriggered(validateEvaluation(oldEvaluation));
 
         setCurrentModel(currentQuestionForEvaluation?.answer?.model);
     }, [currentQuestionForEvaluation?.question?.id]);
@@ -40,6 +42,7 @@ export const ModelEvaluationPage = () => {
                 let oldEvaluation = response?.data?.evaluation;
                 if (oldEvaluation) oldEvaluation["isValid"] = true;
                 setEvaluation(oldEvaluation);
+                setPrefillTriggered(validateEvaluation(oldEvaluation));
             }).catch((error) => {
                 console.log(error);
             });
@@ -112,6 +115,14 @@ export const ModelEvaluationPage = () => {
         }
     };
 
+    const validateEvaluation = (evaluationData) => {
+        if (!evaluationData || Object.keys(evaluationData).length === 0) return false;
+
+        const requiredFields = ["accuracy", "comprehensiveness", "clarity", "empathy", "bias", "harm", "trust", "relevance", "currency", "securityAndPrivacy", "perceivedUsefulness"];
+        const missingFields = requiredFields.filter(field => evaluationData[field] === undefined || evaluationData[field] === null || evaluationData[field] === "");
+        return missingFields.length === 0;
+    };
+
     const onNextUnevaluated = async () => {
         await onSaveAndPersist(true);
         ifCompletedFinishEvaluating();
@@ -123,6 +134,7 @@ export const ModelEvaluationPage = () => {
             let oldEvaluation = response?.data?.evaluation;
             if (oldEvaluation) oldEvaluation["isValid"] = true;
             setEvaluation(oldEvaluation);
+            setPrefillTriggered(validateEvaluation(oldEvaluation));
             setCurrentModel(response?.data?.answer?.model);
         }).catch(error => console.log(error));
     };
@@ -133,6 +145,7 @@ export const ModelEvaluationPage = () => {
             let oldEvaluation = response?.data?.evaluation;
             if (oldEvaluation) oldEvaluation["isValid"] = true;
             setEvaluation(oldEvaluation);
+            setPrefillTriggered(validateEvaluation(oldEvaluation));
             setCurrentModel(response?.data?.answer?.model);
         }).catch(error => console.log(error));
     };
@@ -235,6 +248,9 @@ export const ModelEvaluationPage = () => {
                             allModels={models}
                             evaluation={evaluation}
                             setEvaluation={setEvaluation}
+                            validateEvaluation={validateEvaluation}
+                            prefillTriggered={prefillTriggered}
+                            setPrefillTriggered={setPrefillTriggered}
                             setCurrentModel={setCurrentModel}
                             metricsRef={metricsRef}
                             answerRef={answerRef}

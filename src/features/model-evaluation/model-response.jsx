@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import {useEffect, useState} from "react";
 
-export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef, answerRef}) => {
+export const ModelResponse = ({modelResponse, evaluation, prefillTriggered, onUpdate, metricsRef, answerRef}) => {
 
     const [openHelp, setOpenHelp] = useState(false);
 
@@ -160,6 +160,7 @@ export const ModelResponse = ({modelResponse, evaluation, onUpdate, metricsRef, 
                                                     color={parseInt(value) === parseInt(evaluation?.[key]) ? "primary" : "default"}
                                                     label={value}
                                                     onClick={() => onUpdate(key, value)}
+                                                    disabled={key !== "accuracy" && (evaluation?.[key] === undefined || evaluation?.[key] === null || evaluation?.[key] === '') && !prefillTriggered}
                                                     sx={{
                                                         fontSize: "11px",
                                                         padding: "1px 5px",

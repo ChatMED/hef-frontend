@@ -10,6 +10,9 @@ export const ModelEvaluation = ({
                                     evaluatedModels,
                                     evaluation,
                                     setEvaluation,
+                                    validateEvaluation,
+                                    prefillTriggered,
+                                    setPrefillTriggered,
                                     setCurrentModel,
                                     metricsRef,
                                     answerRef
@@ -47,14 +50,6 @@ export const ModelEvaluation = ({
             currency: parsedAccuracy <= 3 ? 0 : 1,
             securityAndPrivacy: parsedAccuracy <= 3 ? 0 : 1,
         };
-    };
-
-    const validateEvaluation = (evaluationData) => {
-        if (!evaluationData || Object.keys(evaluationData).length === 0) return false;
-
-        const requiredFields = ["accuracy", "comprehensiveness", "clarity", "empathy", "bias", "harm", "trust", "relevance", "currency", "securityAndPrivacy", "perceivedUsefulness"];
-        const missingFields = requiredFields.filter(field => evaluationData[field] === undefined || evaluationData[field] === null || evaluationData[field] === "");
-        return missingFields.length === 0;
     };
 
     const handleModelClick = (model) => {
@@ -138,17 +133,19 @@ export const ModelEvaluation = ({
             <ModelResponse
                 modelResponse={answer}
                 evaluation={evaluation}
+                prefillTriggered={prefillTriggered}
                 onUpdate={(key, value) => {
-                    if (key === "accuracy") {
+                    if (key === "accuracy" && !prefillTriggered) {
                         const autoFilled = prefillMetrics(value);
                         setEvaluation(prev => ({
-                            ...(prev || {}),
+                            ...prev,
                             ...autoFilled,
                             isValid: validateEvaluation(autoFilled)
                         }));
+                        setPrefillTriggered(true);
                     } else {
                         setEvaluation(prev => {
-                            const newEval = {...(prev || {}), [key]: value};
+                            const newEval = {...prev, [key]: value};
                             newEval.isValid = validateEvaluation(newEval);
                             return newEval;
                         });
