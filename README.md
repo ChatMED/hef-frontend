@@ -1,1 +1,1 @@
-ChatMED Human Evaluation Framework
+ChatMED Human Evaluation Platform
