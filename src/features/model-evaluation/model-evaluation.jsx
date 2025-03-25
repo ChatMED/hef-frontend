@@ -34,21 +34,24 @@ export const ModelEvaluation = ({
         "SmolVLM": "SmolVLM",
     };
 
-    const prefillMetrics = (accuracyValue) => {
-        const parsedAccuracy = parseInt(accuracyValue);
+    const prefillMetrics = (understandingValue) => {
+        const passedUnderstanding = parseInt(understandingValue);
 
         return {
-            accuracy: parsedAccuracy,
-            comprehensiveness: parsedAccuracy,
-            clarity: parsedAccuracy,
-            bias: parsedAccuracy,
-            trust: parsedAccuracy,
-            relevance: parsedAccuracy,
-            perceivedUsefulness: parsedAccuracy,
-            empathy: parsedAccuracy <= 3 ? 0 : 1,
-            harm: parsedAccuracy <= 3 ? 0 : 1,
-            currency: parsedAccuracy <= 3 ? 0 : 1,
-            securityAndPrivacy: parsedAccuracy <= 3 ? 0 : 1,
+            understanding: passedUnderstanding,
+            relevance: passedUnderstanding,
+            clarity: passedUnderstanding,
+            accuracy: passedUnderstanding,
+            comprehensiveness: passedUnderstanding,
+            empathy: passedUnderstanding,
+            bias: 0,
+            reasoning: 1,
+            currency: 1,
+            harm: 0,
+            factualityVerification: 0,
+            fabrication: 0,
+            falsification: 0,
+            plagiarism: 0
         };
     };
 
@@ -135,7 +138,7 @@ export const ModelEvaluation = ({
                 evaluation={evaluation}
                 prefillTriggered={prefillTriggered}
                 onUpdate={(key, value) => {
-                    if (key === "accuracy" && !prefillTriggered) {
+                    if (key === "understanding" && !prefillTriggered) {
                         const autoFilled = prefillMetrics(value);
                         setEvaluation(prev => ({
                             ...prev,
