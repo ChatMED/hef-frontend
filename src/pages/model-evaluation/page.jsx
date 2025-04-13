@@ -81,8 +81,6 @@ export const ModelEvaluationPage = () => {
             evaluation["answer"] = currentQuestionForEvaluation?.answer?.id;
             evaluation["username"] = user;
 
-            console.log(evaluation);
-
             await axios.post(`/api/evaluations?goToNextUnevaluatedQuestion=${goToNextUnevaluatedQuestion}`, evaluation)
                 .then(() => {
                     toast.success('Evaluation saved successfully!', {
@@ -291,7 +289,7 @@ export const ModelEvaluationPage = () => {
                             }}
                             startIcon={<IconChevronLeft size={18}/>}
                             onClick={onPrev}
-                            disabled={currentQuestionForEvaluation?.evaluatedQuestions === 0 || currentQuestionForEvaluation?.question?.id === 1}
+                            disabled={currentQuestionForEvaluation?.evaluatedQuestions === 0 || currentQuestionForEvaluation?.question?.questionKey === 0}
                         >
                             Back
                         </Button>
@@ -321,7 +319,7 @@ export const ModelEvaluationPage = () => {
                             }}
                             startIcon={<IconChevronRight size={18}/>}
                             onClick={onNext}
-                            disabled={currentQuestionForEvaluation?.evaluatedModels?.length !== models?.length || currentQuestionForEvaluation?.question?.id === totalQuestions}
+                            disabled={currentQuestionForEvaluation?.evaluatedModels?.length !== models?.length || currentQuestionForEvaluation?.question?.questionKey === totalQuestions - 1}
                         >
                             Next
                         </Button>

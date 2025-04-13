@@ -1,5 +1,6 @@
 import {Box, Button} from "@mui/material";
 import {IconLogout} from "@tabler/icons-react";
+import { IconArrowLeft } from "@tabler/icons-react";
 import {useAuthContext} from "@/context/auth-context.jsx";
 import {useLocation, useNavigate} from "react-router-dom";
 
@@ -41,7 +42,7 @@ export const Header = () => {
         <Box sx={{justifySelf: "end"}}>
             {location.pathname !== '/workspaces' && (<Button
                 variant="outlined"
-                startIcon={<IconLogout size={12}/>}
+                startIcon={<IconArrowLeft size={12}/>}
                 onClick={backToWorkspaces}
                 sx={{
                     borderRadius: 2,

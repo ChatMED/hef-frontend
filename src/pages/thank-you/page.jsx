@@ -1,44 +1,11 @@
-import {Box, Button, Grid, Stack, Typography} from "@mui/material";
-import {Link, useNavigate} from "react-router-dom";
-import {useAuthContext} from "@/context/auth-context.jsx";
-import {IconLogout} from "@tabler/icons-react";
+import {Grid, Stack, Typography} from "@mui/material";
+import {Link} from "react-router-dom";
+import {Header} from "@/pages/header/page.jsx";
 
 export const ThankYouPage = () => {
-    const {onLogout} = useAuthContext();
-    const navigate = useNavigate();
-
-    const onLogoutButton = () => {
-        onLogout();
-        navigate('/login');
-    }
-
     return (
         <>
-            <Box
-                sx={{
-                    position: 'fixed',
-                    top: 8,
-                    right: 40,
-                    zIndex: 999,
-                }}
-            >
-                <Button
-                    variant="outlined"
-                    startIcon={<IconLogout size={12}/>}
-                    onClick={onLogoutButton}
-                    sx={{
-                        borderRadius: 2,
-                        bgcolor: "#f8f9fa",
-                        color: "#252525",
-                        "&:hover": {bgcolor: "#e1dfdf !important"},
-                        fontSize: "12px",
-                        padding: "4px 10px",
-                    }}
-                >
-                    Logout
-                </Button>
-            </Box>
-
+            <Header/>
             <Grid
                 container
                 sx={{minHeight: '100vh', height: '100vh', p: {xs: 3, sm: 3, md: 5}}}
@@ -56,7 +23,7 @@ export const ThankYouPage = () => {
                             }}
                             align={"center"}
                         >
-                            You have evaluated all questions!<br/> Thank you!
+                            You have evaluated all questions for this workspace!<br/> Thank you!
                         </Typography>
                         <Link to={"/question"}>Back to questions</Link>
                     </Stack>
