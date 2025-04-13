@@ -11,6 +11,7 @@ import {LoginPage} from "@/pages/login/page.jsx";
 import {ThankYouPage} from "@/pages/thank-you/page.jsx";
 import ProtectedRoute from "@/pages/routing/protected-route.jsx";
 import {useAuthContext} from "@/context/auth-context.jsx";
+import {WorkspacesPage} from "@/pages/workspaces/page.jsx";
 
 export const RootRouterProvider = () => {
     const {isAuth} = useAuthContext();
@@ -27,6 +28,14 @@ export const RootRouterProvider = () => {
                     }
                 />
                 <Route
+                    path="workspaces"
+                    element={
+                        <ProtectedRoute>
+                            <WorkspacesPage/>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="thank-you"
                     element={
                         <ProtectedRoute>
@@ -35,7 +44,7 @@ export const RootRouterProvider = () => {
                     }
                 />
                 <Route path="login" element={<LoginPage/>}/>
-                <Route path="*" element={<Navigate to={isAuth ? "/question" : "/login"} replace/>}/>
+                <Route path="*" element={<Navigate to={isAuth ? "/workspaces" : "/login"} replace/>}/>
             </Route>
         )
     );

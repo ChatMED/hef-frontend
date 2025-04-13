@@ -1,6 +1,6 @@
 import {CircularProgress, Stack, Typography} from "@mui/material";
 
-export const LoadingScreen = () => {
+export const LoadingComponent = () => {
     return (
         <Stack direction={"column"} justifyContent={"center"} alignItems={"center"} gap={2}
                sx={{width: "100dw", height: "100dvh"}}>

@@ -1,7 +1,8 @@
 import {createContext, useContext, useEffect, useReducer, useState} from "react";
 import {useAuthContext} from "@/context/auth-context.jsx";
 import axios from "@/axios/axios.js";
-import {LoadingScreen} from "@/components/loading-screen/LoadingScreen.jsx";
+import {LoadingComponent} from "@/pages/loading-screen/loadingComponent.jsx";
+import {getQuestionForEvaluation} from "@/services/questions.js";
 
 const AppContext = createContext({})
 
@@ -11,12 +12,11 @@ const reducer = (state, action) => {
 
 export const AppContextProvider = ({children}) => {
     const {user} = useAuthContext();
-    const [loading, setLoading] = useState(false);
     const [state, dispatch] = useReducer(reducer);
 
     useEffect(() => {
-        setLoading(true);
-        axios.get(`/api/questions/${user}`)
+        /*setLoading(true);
+        getQuestionForEvaluation(null)
             .then(questionResponse => {
                 dispatch({
                     currentQuestionForEvaluation: questionResponse?.data || {}
@@ -31,7 +31,7 @@ export const AppContextProvider = ({children}) => {
         axios.get('api/models')
             .then(modelsResponse => {
                 dispatch({models: modelsResponse?.data});
-            }).catch(error => console.log(error))
+            }).catch(error => console.log(error))*/
 
     }, [user])
 
@@ -39,7 +39,7 @@ export const AppContextProvider = ({children}) => {
         <AppContext.Provider
             value={{state, dispatch}}
         >
-            {loading ? <LoadingScreen/> : children}
+            {children}
         </AppContext.Provider>
 
     )
