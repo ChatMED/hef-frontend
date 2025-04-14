@@ -1,18 +1,23 @@
 import {ModelEvaluation} from "../../features/model-evaluation/model-evaluation.jsx";
 import {Box, Button, LinearProgress, Stack, Typography} from "@mui/material";
 import {useEffect, useRef, useState} from "react";
-import {IconChevronLeft, IconChevronRight, IconDeviceFloppy, IconLogout} from "@tabler/icons-react";
+import {IconChevronLeft, IconChevronRight, IconDeviceFloppy} from "@tabler/icons-react";
 import axios from "@/axios/axios.js";
 import {useAppContext} from "@/context/app-context.jsx";
 import {useAuthContext} from "@/context/auth-context.jsx";
-import {LoadingScreen} from "@/components/loading-screen/LoadingScreen.jsx";
+import {LoadingComponent} from "@/pages/loading-screen/loadingComponent.jsx";
 import {toast, ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {useNavigate} from "react-router-dom";
+import {getQuestionForEvaluation, goToNextQuestion, goToPrevQuestion} from "@/services/questions.js";
+import {getModels} from "@/services/models.js";
+import {Header} from "@/pages/header/page.jsx";
+
 
 export const ModelEvaluationPage = () => {
     const {user, onLogout} = useAuthContext();
     const {state, dispatch} = useAppContext();
+    const [loading, setLoading] = useState(false);
     const {currentQuestionForEvaluation, models} = state || {};
     const [question, setQuestion] = useState({});
     const [currentModel, setCurrentModel] = useState();
@@ -21,6 +26,25 @@ export const ModelEvaluationPage = () => {
     const metricsRef = useRef(null);
     const answerRef = useRef(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        setLoading(true);
+        getQuestionForEvaluation(null)
+            .then(questionResponse => {
+                dispatch({
+                    currentQuestionForEvaluation: questionResponse?.data || {}
+                });
+            })
+            .catch(error => {
+                console.log(error)
+                dispatch({currentQuestionForEvaluation: {}})
+            }).finally(() => setLoading(false));
+
+        getModels().then(modelsResponse => {
+            dispatch({models: modelsResponse?.data});
+        }).catch(error => console.log(error))
+
+    }, [])
 
     useEffect(() => {
         setQuestion(currentQuestionForEvaluation);
@@ -35,15 +59,16 @@ export const ModelEvaluationPage = () => {
 
     useEffect(() => {
         if (currentModel !== undefined && currentModel !== null) {
-            axios.get(`/api/questions/${user}?modelId=${currentModel?.id}`).then((response) => {
-                dispatch({currentQuestionForEvaluation: response.data || {}});
-                setQuestion(response?.data);
+            getQuestionForEvaluation(currentModel?.id)
+                .then((response) => {
+                    dispatch({currentQuestionForEvaluation: response.data || {}});
+                    setQuestion(response?.data);
 
-                let oldEvaluation = response?.data?.evaluation;
-                if (oldEvaluation) oldEvaluation["isValid"] = true;
-                setEvaluation(oldEvaluation);
-                setPrefillTriggered(validateEvaluation(oldEvaluation));
-            }).catch((error) => {
+                    let oldEvaluation = response?.data?.evaluation;
+                    if (oldEvaluation) oldEvaluation["isValid"] = true;
+                    setEvaluation(oldEvaluation);
+                    setPrefillTriggered(validateEvaluation(oldEvaluation));
+                }).catch((error) => {
                 console.log(error);
             });
         }
@@ -55,8 +80,6 @@ export const ModelEvaluationPage = () => {
         if (evaluation?.isValid) {
             evaluation["answer"] = currentQuestionForEvaluation?.answer?.id;
             evaluation["username"] = user;
-
-            console.log(evaluation);
 
             await axios.post(`/api/evaluations?goToNextUnevaluatedQuestion=${goToNextUnevaluatedQuestion}`, evaluation)
                 .then(() => {
@@ -71,7 +94,7 @@ export const ModelEvaluationPage = () => {
                     });
 
                     let modelId = goToNextUnevaluatedQuestion ? '' : currentModel?.id;
-                    axios.get(`/api/questions/${user}?modelId=${modelId}`)
+                    getQuestionForEvaluation(modelId)
                         .then(response => {
                             dispatch({
                                 responses: response?.data || [], currentQuestionForEvaluation: response?.data || {}
@@ -131,218 +154,199 @@ export const ModelEvaluationPage = () => {
     };
 
     const onPrev = async () => {
-        axios.post(`/api/questions/prev/${user}`).then(response => {
-            dispatch({responses: response?.data || [], currentQuestionForEvaluation: response?.data || {}});
-            let oldEvaluation = response?.data?.evaluation;
-            if (oldEvaluation) oldEvaluation["isValid"] = true;
-            setEvaluation(oldEvaluation);
-            setPrefillTriggered(validateEvaluation(oldEvaluation));
-            setCurrentModel(response?.data?.answer?.model);
-        }).catch(error => console.log(error));
+        goToPrevQuestion()
+            .then(response => {
+                dispatch({responses: response?.data || [], currentQuestionForEvaluation: response?.data || {}});
+                let oldEvaluation = response?.data?.evaluation;
+                if (oldEvaluation) oldEvaluation["isValid"] = true;
+                setEvaluation(oldEvaluation);
+                setPrefillTriggered(validateEvaluation(oldEvaluation));
+                setCurrentModel(response?.data?.answer?.model);
+            }).catch(error => console.log(error));
     };
 
     const onNext = async () => {
-        axios.post(`/api/questions/next/${user}`).then(response => {
-            dispatch({responses: response?.data || [], currentQuestionForEvaluation: response?.data || {}});
-            let oldEvaluation = response?.data?.evaluation;
-            if (oldEvaluation) oldEvaluation["isValid"] = true;
-            setEvaluation(oldEvaluation);
-            setPrefillTriggered(validateEvaluation(oldEvaluation));
-            setCurrentModel(response?.data?.answer?.model);
-        }).catch(error => console.log(error));
+        goToNextQuestion()
+            .then(response => {
+                dispatch({responses: response?.data || [], currentQuestionForEvaluation: response?.data || {}});
+                let oldEvaluation = response?.data?.evaluation;
+                if (oldEvaluation) oldEvaluation["isValid"] = true;
+                setEvaluation(oldEvaluation);
+                setPrefillTriggered(validateEvaluation(oldEvaluation));
+                setCurrentModel(response?.data?.answer?.model);
+            }).catch(error => console.log(error));
     };
-
-    const onLogoutButton = () => {
-        onLogout();
-        navigate('/login');
-    }
 
     const evaluatedQuestions = currentQuestionForEvaluation?.evaluatedQuestions;
     const remainingQuestions = currentQuestionForEvaluation?.remainingQuestions;
     const totalQuestions = evaluatedQuestions + remainingQuestions;
     const percentageLeft = Math.round((remainingQuestions / totalQuestions) * 100);
 
-    return (<>
-        {currentQuestionForEvaluation?.question?.id && (<>
-            <LinearProgress
-                variant="buffer"
-                value={(100 - percentageLeft) || 0}
-                valueBuffer={((100 - percentageLeft) || 0) + 5}
-                sx={{position: "fixed", top: 0, left: 0, right: 0}}
-            />
+    return loading ? <LoadingComponent/> : (
+        <>
+            {currentQuestionForEvaluation?.question?.id && (<>
+                <LinearProgress
+                    variant="buffer"
+                    value={(100 - percentageLeft) || 0}
+                    valueBuffer={((100 - percentageLeft) || 0) + 5}
+                    sx={{position: "fixed", top: 0, left: 0, right: 0}}
+                />
 
-            <Box
-                sx={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto 1fr",
-                    alignItems: "center",
-                    width: "100%",
-                    maxWidth: "1400px",
-                    pt: 1,
-                    pb: 1,
-                    px: 2,
-                    mx: "auto",
-                }}
-            >
-                <Box/>
+                <Header/>
+
                 <Box
                     sx={{
-                        justifySelf: "center",
-                        border: "2px solid #d1d1d1",
-                        backgroundColor: "#f8f9fa",
-                        padding: "4px 10px",
-                        borderRadius: "8px",
-                        minWidth: "250px",
-                    }}
-                >
-                    <Typography
-                        variant="body2"
-                        sx={{
-                            color: "#252525", fontWeight: "500", fontSize: "11px", textAlign: "center",
-                        }}
-                    >
-                        You have evaluated {evaluatedQuestions} / {totalQuestions} questions.
-                    </Typography>
-                </Box>
-                <Box sx={{justifySelf: "end"}}>
-                    <Button
-                        variant="outlined"
-                        startIcon={<IconLogout size={12}/>}
-                        onClick={onLogoutButton}
-                        sx={{
-                            borderRadius: 2,
-                            bgcolor: "#f8f9fa",
-                            color: "#252525",
-                            "&:hover": {bgcolor: "#e1dfdf !important"},
-                            fontSize: "12px",
-                            padding: "4px 10px",
-                        }}
-                    >
-                        Logout
-                    </Button>
-                </Box>
-            </Box>
-        </>)}
-
-        <Box
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                height: "calc(100vh - 120px)",
-                maxWidth: "1400px",
-                width: "100%",
-                mx: "auto",
-            }}
-        >
-            <Box sx={{flex: 1, display: "flex", flexDirection: "column", overflow: "hidden"}}>
-                {currentQuestionForEvaluation?.question?.id ? (<ModelEvaluation
-                    question={currentQuestionForEvaluation?.question}
-                    answer={currentQuestionForEvaluation?.answer}
-                    currentModel={currentQuestionForEvaluation?.answer?.model}
-                    evaluatedModels={currentQuestionForEvaluation?.evaluatedModels}
-                    allModels={models}
-                    evaluation={evaluation}
-                    setEvaluation={setEvaluation}
-                    validateEvaluation={validateEvaluation}
-                    prefillTriggered={prefillTriggered}
-                    setPrefillTriggered={setPrefillTriggered}
-                    setCurrentModel={setCurrentModel}
-                    metricsRef={metricsRef}
-                    answerRef={answerRef}
-                />) : (<Box sx={{flex: 1}}>
-                    <LoadingScreen/>
-                </Box>)}
-            </Box>
-
-            {currentQuestionForEvaluation?.question?.id && (<Stack
-                direction={"column"}
-                gap={2}
-                sx={{position: "fixed", bottom: 0, px: 1, left: 0, right: 0, bgcolor: "background.main"}}
-            >
-                <Stack
-                    maxWidth={"lg"}
-                    direction={"row"}
-                    gap={2}
-                    useFlexGap
-                    flexWrap={"wrap"}
-                    sx={{
-                        bgcolor: "background.main",
-                        borderTop: 1,
-                        borderColor: "divider",
-                        py: 2,
+                        display: "grid",
+                        gridTemplateColumns: "1fr auto 1fr",
+                        alignItems: "center",
                         width: "100%",
+                        maxWidth: "1400px",
+                        pt: 1,
+                        pb: 1,
+                        px: 2,
                         mx: "auto",
                     }}
                 >
-                    <Button
+                    <Box/>
+                    <Box
                         sx={{
-                            flex: 2,
-                            borderRadius: 2,
-                            bgcolor: "#f1efef",
-                            "&:hover": {bgcolor: "#e1dfdf !important"},
+                            justifySelf: "center",
+                            border: "2px solid #d1d1d1",
+                            backgroundColor: "#f8f9fa",
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            minWidth: "250px",
                         }}
-                        startIcon={<IconChevronLeft size={18}/>}
-                        onClick={onPrev}
-                        disabled={currentQuestionForEvaluation?.evaluatedQuestions === 0 || currentQuestionForEvaluation?.question?.id === 1}
                     >
-                        Back
-                    </Button>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: "#252525", fontWeight: "500", fontSize: "11px", textAlign: "center",
+                            }}
+                        >
+                            You have evaluated {evaluatedQuestions} / {totalQuestions} questions.
+                        </Typography>
+                    </Box>
+                </Box>
+            </>)}
 
-                    <Button
-                        variant={"text"}
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "calc(100vh - 120px)",
+                    maxWidth: "1400px",
+                    width: "100%",
+                    mx: "auto",
+                }}
+            >
+                <Box sx={{flex: 1, display: "flex", flexDirection: "column", overflow: "hidden"}}>
+                    {currentQuestionForEvaluation?.question?.id ? (<ModelEvaluation
+                        question={currentQuestionForEvaluation?.question}
+                        answer={currentQuestionForEvaluation?.answer}
+                        currentModel={currentQuestionForEvaluation?.answer?.model}
+                        evaluatedModels={currentQuestionForEvaluation?.evaluatedModels}
+                        allModels={models}
+                        evaluation={evaluation}
+                        setEvaluation={setEvaluation}
+                        validateEvaluation={validateEvaluation}
+                        prefillTriggered={prefillTriggered}
+                        setPrefillTriggered={setPrefillTriggered}
+                        setCurrentModel={setCurrentModel}
+                        metricsRef={metricsRef}
+                        answerRef={answerRef}
+                    />) : (<Box sx={{flex: 1}}>
+                        <LoadingComponent/>
+                    </Box>)}
+                </Box>
+
+                {currentQuestionForEvaluation?.question?.id && (<Stack
+                    direction={"column"}
+                    gap={2}
+                    sx={{position: "fixed", bottom: 0, px: 1, left: 0, right: 0, bgcolor: "background.main"}}
+                >
+                    <Stack
+                        maxWidth={"lg"}
+                        direction={"row"}
+                        gap={2}
+                        useFlexGap
+                        flexWrap={"wrap"}
                         sx={{
-                            flex: 2,
-                            borderRadius: 2,
-                            bgcolor: "#f1efef",
-                            "&:hover": {bgcolor: "#e1dfdf !important"},
+                            bgcolor: "background.main",
+                            borderTop: 1,
+                            borderColor: "divider",
+                            py: 2,
+                            width: "100%",
+                            mx: "auto",
                         }}
-                        startIcon={<IconDeviceFloppy size={18}/>}
-                        onClick={() => onSaveAndPersist()}
-                        disabled={!evaluation?.isValid}
                     >
-                        Save
-                    </Button>
+                        <Button
+                            sx={{
+                                flex: 2,
+                                borderRadius: 2,
+                                bgcolor: "#f1efef",
+                                "&:hover": {bgcolor: "#e1dfdf !important"},
+                            }}
+                            startIcon={<IconChevronLeft size={18}/>}
+                            onClick={onPrev}
+                            disabled={currentQuestionForEvaluation?.evaluatedQuestions === 0 || currentQuestionForEvaluation?.question?.questionKey === 0}
+                        >
+                            Back
+                        </Button>
 
-                    <Button
-                        variant={"text"}
-                        sx={{
-                            flex: 2,
-                            borderRadius: 2,
-                            bgcolor: "#f1efef",
-                            "&:hover": {bgcolor: "#e1dfdf !important"},
-                        }}
-                        startIcon={<IconChevronRight size={18}/>}
-                        onClick={onNext}
-                        disabled={currentQuestionForEvaluation?.evaluatedModels?.length !== models?.length || currentQuestionForEvaluation?.question?.id === totalQuestions}
-                    >
-                        Next
-                    </Button>
+                        <Button
+                            variant={"text"}
+                            sx={{
+                                flex: 2,
+                                borderRadius: 2,
+                                bgcolor: "#f1efef",
+                                "&:hover": {bgcolor: "#e1dfdf !important"},
+                            }}
+                            startIcon={<IconDeviceFloppy size={18}/>}
+                            onClick={() => onSaveAndPersist()}
+                            disabled={!evaluation?.isValid}
+                        >
+                            Save
+                        </Button>
 
-                    <Button
-                        variant={"contained"}
-                        sx={{
-                            flex: 5,
-                            boxShadow: 0,
-                            borderRadius: 2,
-                            minWidth: "200px",
-                            color: "#fefefe !important",
-                            bgcolor: evaluation?.isValid ? "primary.main" : "grey.400",
-                            "&:hover": {
-                                bgcolor: evaluation?.isValid ? "primary.dark" : "grey.500",
-                            },
-                        }}
-                        endIcon={<IconChevronRight size={18}/>}
-                        onClick={onNextUnevaluated}
-                        disabled={!evaluation?.isValid}
-                    >
-                        Save & Continue to next unevaluated question
-                    </Button>
-                </Stack>
-            </Stack>)}
-        </Box>
+                        <Button
+                            variant={"text"}
+                            sx={{
+                                flex: 2,
+                                borderRadius: 2,
+                                bgcolor: "#f1efef",
+                                "&:hover": {bgcolor: "#e1dfdf !important"},
+                            }}
+                            startIcon={<IconChevronRight size={18}/>}
+                            onClick={onNext}
+                            disabled={currentQuestionForEvaluation?.evaluatedModels?.length !== models?.length || currentQuestionForEvaluation?.question?.questionKey === totalQuestions - 1}
+                        >
+                            Next
+                        </Button>
 
-        <ToastContainer position="top-right" autoClose={1500}/>
-    </>);
+                        <Button
+                            variant={"contained"}
+                            sx={{
+                                flex: 5,
+                                boxShadow: 0,
+                                borderRadius: 2,
+                                minWidth: "200px",
+                                color: "#fefefe !important",
+                                bgcolor: evaluation?.isValid ? "primary.main" : "grey.400",
+                                "&:hover": {
+                                    bgcolor: evaluation?.isValid ? "primary.dark" : "grey.500",
+                                },
+                            }}
+                            endIcon={<IconChevronRight size={18}/>}
+                            onClick={onNextUnevaluated}
+                            disabled={!evaluation?.isValid}
+                        >
+                            Save & Continue to next unevaluated question
+                        </Button>
+                    </Stack>
+                </Stack>)}
+            </Box>
 
-
+            <ToastContainer position="top-right" autoClose={1500}/>
+        </>);
 };

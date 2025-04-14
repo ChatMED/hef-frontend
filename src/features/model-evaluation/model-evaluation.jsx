@@ -83,7 +83,7 @@ export const ModelEvaluation = ({
                     '&::-webkit-scrollbar-thumb': {backgroundColor: '#c1c1c1', borderRadius: '3px'},
                 }}
             >
-                <Typography align="left" fontWeight={600}>Question {question?.id}</Typography>
+                <Typography align="left" fontWeight={600}>Question {question?.questionKey + 1}</Typography>
                 <Typography align="left" sx={{fontSize: '13px', lineHeight: 1.4, mt: 1.3}}>{question?.text}</Typography>
             </Box>
 

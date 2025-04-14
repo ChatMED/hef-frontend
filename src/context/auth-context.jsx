@@ -1,6 +1,7 @@
 import {createContext, useContext, useEffect, useState} from "react";
-import {LoadingScreen} from "@/components/loading-screen/LoadingScreen.jsx";
+import {LoadingComponent} from "@/pages/loading-screen/loadingComponent.jsx";
 import {login} from "@/services/login.js";
+import {useNavigate} from "react-router-dom";
 
 const AuthContext = createContext({
     user: null,
@@ -30,20 +31,21 @@ export const AuthContextProvider = ({children}) => {
             localStorage.setItem("user", response.username);
             setUser(response.username);
             setIsAuth(true);
+            window.location.href = "/workspaces";
         }).catch(() => {
             setIsAuth(false);
         });
     };
 
     const onLogout = () => {
-        localStorage.removeItem("user");
+        localStorage.clear();
         setUser(null);
         setIsAuth(false);
     };
 
     return (
         <AuthContext.Provider value={{isAuth, user, onLogin, onLogout}}>
-            {isAuth === null ? <LoadingScreen/> : children}
+            {isAuth === null ? <LoadingComponent/> : children}
         </AuthContext.Provider>
     );
 };

@@ -27,8 +27,9 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
     config => config,
     error => {
-        if (error?.response?.status === 403) {
-            localStorage.removeItem(AUTH_TOKEN);
+        const isLoggedIn = localStorage.getItem("user");
+        if (isLoggedIn && (error?.response?.status === 403 || error?.response?.status === 400)) {
+            localStorage.clear();
             window.location.href = '/login';
         }
         return Promise.reject(error);
