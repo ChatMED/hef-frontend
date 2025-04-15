@@ -164,13 +164,13 @@ export const ModelResponse = ({modelResponse, evaluation, prefillTriggered, onUp
                 <Grid item xs={12} md={9}>
                     <Grid container spacing={2}>
                         {metrics.filter(metric => metric.key !== "factualityVerification" && !["fabrication", "falsification", "plagiarism"]
-                            .includes(metric.key)).map(({key, label, ratings}) => (
+                            .includes(metric.key))?.map(({key, label, ratings}) => (
                             <Grid item xs={6} sm={4} md={3} key={key}>
                                 <Typography fontWeight={600} sx={{fontSize: "13px", mb: 0.5, textAlign: "left"}}>
                                     {label}
                                 </Typography>
                                 <Stack direction="row" gap={0.7} flexWrap="wrap">
-                                    {Object.keys(ratings).map((value) => (
+                                    {Object.keys(ratings)?.map((value) => (
                                         <Tooltip key={value} title={ratings[value]} arrow>
                                             <Chip
                                                 size="small"
@@ -196,7 +196,7 @@ export const ModelResponse = ({modelResponse, evaluation, prefillTriggered, onUp
                             </Typography>
                             <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
                                 <Stack direction="row" gap={0.7} alignItems="center">
-                                    {Object.keys(metrics.find(m => m.key === "factualityVerification").ratings).map((value) => (
+                                    {Object.keys(metrics.find(m => m.key === "factualityVerification").ratings)?.map((value) => (
                                         <Tooltip key={value}
                                                  title={metrics.find(m => m.key === "factualityVerification").ratings[value]}
                                                  arrow>
@@ -219,7 +219,7 @@ export const ModelResponse = ({modelResponse, evaluation, prefillTriggered, onUp
 
                                 {parseInt(evaluation?.factualityVerification) === 1 && (
                                     <Stack direction="row" alignItems="center" spacing={2} sx={{ml: 8}}>
-                                        {["fabrication", "falsification", "plagiarism"].map((factKey) => (
+                                        {["fabrication", "falsification", "plagiarism"]?.map((factKey) => (
                                             <Box key={factKey}
                                                  sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
                                                 <Typography sx={{fontSize: "12px", whiteSpace: 'nowrap'}}>
@@ -294,7 +294,7 @@ export const ModelResponse = ({modelResponse, evaluation, prefillTriggered, onUp
             <DialogContent dividers>
                 <DialogContentText component="div">
                     <Box component="ul" sx={{pl: 3}}>
-                        {metrics.map(({label, tooltip}) => (tooltip ? (<li key={label}>
+                        {metrics?.map(({label, tooltip}) => (tooltip ? (<li key={label}>
                             <Typography variant="body2" component="span" sx={{fontSize: "13px"}}>
                                 <strong>{label}:</strong> {tooltip}
                             </Typography>
