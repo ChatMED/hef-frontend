@@ -88,7 +88,7 @@ export const ModelEvaluation = ({
             </Box>
 
             <Stack direction="row" useFlexGap flexWrap="wrap" gap={1}>
-                {allModels.map((model) => {
+                {allModels?.map((model) => {
                     const isEvaluated = evaluatedModels.some((e) => e?.name === model?.name);
                     const isCurrent = currentModel?.name === model?.name;
                     const displayModelName = modelNameMap[model?.name] || model?.name;

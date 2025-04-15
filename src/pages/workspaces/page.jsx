@@ -51,7 +51,7 @@ export const WorkspacesPage = () => {
                             Please choose your workspace here.
                         </Typography>
 
-                        {workspaces.map((it, index) => (
+                        {workspaces?.map((it, index) => (
                             <Box
                                 key={it.id}
                                 onClick={() => onWorkspaceSelect(it.id)}
